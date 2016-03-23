@@ -1,30 +1,30 @@
 package br.com.commons.androidmapsintegration;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.Circle;
-import com.google.android.gms.maps.model.CircleOptions;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polygon;
-import com.google.android.gms.maps.model.PolygonOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.clustering.ClusterManager;
+
+import java.util.ArrayList;
+
+import br.com.commons.androidmapsintegration.object.JobRenderer;
+import br.com.commons.androidmapsintegration.object.MyItem;
 
 public class DisctanceActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private ClusterManager<MyItem> mClusterManager;
+    private ArrayList<MyItem> jobs = new ArrayList<MyItem>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_disctance);
+
+        jobs.add(new MyItem("Mateus Emanuel", R.drawable.profile_ic, -18.642229, -48.176849));
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -42,31 +42,41 @@ public class DisctanceActivity extends FragmentActivity implements OnMapReadyCal
      * installed Google Play services and returned to the app.
      */
     @Override
+    /*public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+        Bitmap imageResource = BitmapFactory.decodeResource(getResources(), R.drawable.profile_ic);
+        Bitmap imageResized = Bitmap.createScaledBitmap(imageResource, 120, 120, false);
+
+
+        // Add a marker in Sydney and move the camera
+        LatLng mWork = new LatLng(-18.642229, -48.176849);
+        mMap.addMarker(new MarkerOptions()
+                .position(mWork)
+                .icon(BitmapDescriptorFactory.fromBitmap(imageResized))
+                        // Specifies the anchor to be at a particular point in the marker image.
+                .anchor(0.5f, 1)
+                .title("Marker in My Work"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mWork, 10));
+
+    }*/
+
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        mMap.getUiSettings().setMapToolbarEnabled(true);
+        mClusterManager = new ClusterManager<MyItem>(this, mMap);
+        mClusterManager.setRenderer(new JobRenderer(this, mMap, mClusterManager));
+        mMap.setOnCameraChangeListener(mClusterManager);
+        mMap.setOnMarkerClickListener(mClusterManager);
 
-        // Add a thin red line from London to New York.
-        Polyline line = mMap.addPolyline(new PolylineOptions()
-                .add(new LatLng(51.5, -0.1), new LatLng(40.7, -74.0))
-                .width(5)
-                .color(Color.RED));
+        //Assume that we already have arraylist of jobs
 
-        // Add a circle in Sydney
-        Circle circle = mMap.addCircle(new CircleOptions()
-                .center(new LatLng(-33.87365, 151.20689))
-                .radius(10000)
-                .strokeColor(Color.RED)
-                .fillColor(Color.BLUE));
 
-        // Add a triangle in the Gulf of Guinea
-        Polygon polygon = mMap.addPolygon(new PolygonOptions()
-                .add(new LatLng(0, 0), new LatLng(0, 5), new LatLng(3, 5), new LatLng(0, 0))
-                .strokeColor(Color.RED)
-                .fillColor(Color.BLUE));
+        for(final MyItem job: jobs){
+            mClusterManager.addItem(job);
+        }
+        mClusterManager.cluster();
+
     }
 }
